@@ -39,7 +39,7 @@ function main() {
       consumer.consume();
     })
     .on('data', function (data) {
-      if (CONSOLE_DEBUG) {
+      if (CONSOLE_DEBUG === "true") {
         console.log(data.value.toString());
       }
     });

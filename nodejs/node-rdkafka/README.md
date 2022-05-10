@@ -11,10 +11,10 @@ On Red Hat Enterprise Linux 7, assuming subscription-manager is enabled:
 subscription-manager repos --enable rhel-server-rhscl-7-rpms
 subscription-manager repos --enable rhel-7-server-optional-rpms
 
-yum install rh-nodejs12
+yum install -y rh-nodejs12
 scl enable rh-nodejs12 bash
 
-yum install devtoolset-7
+yum install -y devtoolset-7
 scl enable devtoolset-7 bash
 ```
 
