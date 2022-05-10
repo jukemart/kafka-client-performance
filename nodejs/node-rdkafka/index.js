@@ -1,4 +1,6 @@
 const Kafka = require('node-rdkafka');
+const async = require('async');
+
 const Dotenv = require('dotenv');
 
 // Increase thread count for libuv
@@ -13,10 +15,31 @@ function main() {
     CONSOLE_DEBUG,
     KAFKA_BROKERS
   } = process.env;
+  const MAX_QUEUE_SIZE = 3000000;
+  const MAX_PARALLEL_HANDLES = 2;
 
+  let paused = false;
   if (!KAFKA_BROKERS) {
     console.error('Kafka Brokers not present');
     process.exit(1);
+
+  }
+  const msgQueue = async.queue(async (data, done) => {
+    onData(data);
+    done();
+  }, MAX_PARALLEL_HANDLES);
+
+  msgQueue.drain = async () => {
+    if (paused) {
+      consumer.resume(consumer.assignments());
+      paused = false;
+    }
+  }
+
+  const onData = (data) => {
+    if (CONSOLE_DEBUG && CONSOLE_DEBUG === "true") {
+      console.log(data.value.toString());
+    }
   }
 
   const consumer = new Kafka.KafkaConsumer({
@@ -39,8 +62,10 @@ function main() {
       consumer.consume();
     })
     .on('data', function (data) {
-      if (CONSOLE_DEBUG === "true") {
-        console.log(data.value.toString());
+      msgQueue.push(data);
+      if (msgQueue.length() > MAX_QUEUE_SIZE) {
+        consumer.pause(consumer.assignments());
+        paused = true;
       }
     });
 }
