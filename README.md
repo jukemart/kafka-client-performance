@@ -73,3 +73,15 @@ Create a `test` topic with 3 partitions and RF=1.
 (Optional) Ensure that each partition leader is on a separate broker.
 
 ### Kafka Producer Perf Tool
+
+```
+kafka-producer-perf-test \
+  --topic test \
+  --num-records 1000000000 \
+  --record-size 100 \
+  --throughput -1 \
+  --producer-props acks=0 \
+  bootstrap.servers=localhost:9092 \
+  buffer.memory=67108864 \
+  batch.size=8196
+```
