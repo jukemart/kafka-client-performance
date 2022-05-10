@@ -1,6 +1,10 @@
 const Kafka = require('node-rdkafka');
 const Dotenv = require('dotenv');
 
+// Increase thread count for libuv
+const { cpus } = require('os')
+process.env.UV_THREADPOOL_SIZE = cpus().length;
+
 Dotenv.config();
 
 function main() {
