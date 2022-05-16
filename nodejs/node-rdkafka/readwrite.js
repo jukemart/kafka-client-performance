@@ -17,7 +17,7 @@ async function main() {
     process.exit(1);
   }
 
-  const BATCH_MESSAGE_SIZE = 100000;
+  const NUM_BATCH_MESSAGES = 100000;
   const producer = new Kafka.Producer({
     'client.id': 'node-rdkafka-client',
     'metadata.broker.list': KAFKA_BROKERS,
@@ -25,18 +25,21 @@ async function main() {
     'socket.keepalive.enable': true,
     'queue.buffering.max.messages': 1000000,
     'queue.buffering.max.ms': 100,
-    'batch.num.messages': BATCH_MESSAGE_SIZE
+    'batch.num.messages': NUM_BATCH_MESSAGES
   }, {
     'acks': 0
   });
 
   let consumer;
+  let numConsumed = 0;
   let numProduced = 0;
   const onData = (data) => {
+    if (numConsumed++ >= NUM_BATCH_MESSAGES) {
+      consumer.pause(['test']);
+    }
     if (CONSOLE_DEBUG === 'true') {
       console.log(data.value.toString());
     }
-    consumer.pause(['test']);
 
     try {
       producer.produce(// Topic to send the message to
@@ -48,11 +51,12 @@ async function main() {
         Date.now(),
         null
       );
-      numProduced++
-      if (numProduced >= BATCH_MESSAGE_SIZE) {
+      numProduced++;
+      if (numProduced >= NUM_BATCH_MESSAGES) {
         producer.poll();
         numProduced = 0;
         consumer.resume(['test']);
+        numConsumed = 0;
       }
     } catch (ignored) {
     }
@@ -67,7 +71,8 @@ async function main() {
 
     consumer = new Kafka.KafkaConsumer({
       'group.id': 'node-rdkafka-read-group',
-      'metadata.broker.list': KAFKA_BROKERS
+      'metadata.broker.list': KAFKA_BROKERS,
+      'queued.min.messages': NUM_BATCH_MESSAGES
     }, {
       'auto.offset.reset': 'beginning'
     });
