@@ -52,7 +52,7 @@ async function main() {
       if (numProduced >= BATCH_MESSAGE_SIZE) {
         producer.poll();
         numProduced = 0;
-        consumer.consume();
+        consumer.resume(['test']);
       }
     } catch (ignored) {
     }
