@@ -18,6 +18,7 @@ async function main() {
   }
 
   const BATCH_MESSAGE_SIZE = 100000;
+  let consumerStream;
   const producer = new Kafka.Producer({
     'client.id': 'node-rdkafka-client',
     'metadata.broker.list': KAFKA_BROKERS,
@@ -50,6 +51,7 @@ async function main() {
       if (numProduced >= BATCH_MESSAGE_SIZE) {
         producer.poll();
         numProduced = 0;
+        consumerStream.consumer.commit();
       }
     } catch (ignored) {
     }
@@ -62,16 +64,19 @@ async function main() {
   // Wait for the ready event before proceeding
   producer.on('ready', function () {
 
-    const stream = Kafka.createReadStream({
+    consumerStream = Kafka.createReadStream({
       'group.id': 'node-rdkafka-read-group',
-      'metadata.broker.list': KAFKA_BROKERS
+      'metadata.broker.list': KAFKA_BROKERS,
+      'socket.keepalive.enable': true,
+      'enable.auto.commit': false
     }, {
       'auto.offset.reset': 'beginning'
     }, {
-      topics: ['test']
+      topics: ['test'],
+      fetchSize: BATCH_MESSAGE_SIZE
     });
 
-    stream.on('data', onData);
+    consumerStream.on('data', onData);
   });
 }
 
