@@ -11,7 +11,7 @@ Maybe a pretty graph or two.
 Reproducibility of tests and numbers is also a priority, with a generous estimation range of, say, 20% i.e. re-running tests should get numbers within 20% of the originals.
 
 Non-goals include:
-* Production-grade performance
+* Production-grade code
 * Realistic workloads
 * Capabilities analysis or comparison
 * "Apples to apples" testing that tries to remove all possible extraneous variables
@@ -80,7 +80,7 @@ kafka-producer-perf-test \
   --num-records 1000000000 \
   --record-size 100 \
   --throughput -1 \
-  --producer-props acks=0 \
+  --producer-props acks=0 linger.ms=100 \
   bootstrap.servers=localhost:9092 \
   buffer.memory=67108864 \
   batch.size=8196

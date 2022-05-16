@@ -6,16 +6,14 @@ Requires Node.js, C / C++ (14) development tools to build librdkafka.
 Tested with Node.js 12.
 
 Install dependencies for development tools.
-On Red Hat Enterprise Linux 7, assuming subscription-manager is enabled:
+On Red Hat Enterprise Linux 8, assuming subscription-manager is enabled:
 ```
-subscription-manager repos --enable rhel-server-rhscl-7-rpms
-subscription-manager repos --enable rhel-7-server-optional-rpms
+sudo subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms
+sudo dnf group install "Development Tools"
+sudo dnf install git python3 cpp
 
-yum install -y rh-nodejs12
-scl enable rh-nodejs12 bash
-
-yum install -y devtoolset-7
-scl enable devtoolset-7 bash
+### Node.js 16 ###
+sudo dnf module install nodejs:16
 ```
 
 Run `npm install` to get dependencies and build dependencies.
@@ -29,3 +27,7 @@ Use `npm start` to start reading from the `test` topic from beginning.
 The Kafka client will then read messages until forcibly stopped.
 
 To stop/interrupt the process, use `ctrl-c` or otherwise kill it.
+
+## Results
+
+Over a 5-minute period, the read client consumed 107 million records, the readwrite client wrote 21 million messages (4.34 million messages / min).

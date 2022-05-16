@@ -24,7 +24,7 @@ async function main() {
     eachMessage: async ({
       message
     }) => {
-      if (CONSOLE_DEBUG) {
+      if (CONSOLE_DEBUG === 'true') {
         console.log(message.value.toString());
       }
     }

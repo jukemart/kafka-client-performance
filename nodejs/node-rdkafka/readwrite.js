@@ -63,7 +63,7 @@ async function main() {
   producer.on('ready', function () {
 
     let consumer = new Kafka.KafkaConsumer({
-      'group.id': 'node-rdkafka-read-group',
+      'group.id': 'node-rdkafka-readwrite-group',
       'metadata.broker.list': KAFKA_BROKERS,
       'queued.min.messages': NUM_BATCH_MESSAGES,
       'queued.max.messages.kbytes': 10000

@@ -27,15 +27,15 @@ async function main() {
     eachBatch: async ({
       batch
     }) => {
-      if (CONSOLE_DEBUG) {
+      if (CONSOLE_DEBUG === 'true') {
         // Just write one from the batch
         console.log(batch.messages[0].value.toString());
       }
       await producer.send({
         acks: 0,
-        topic: "test-write",
+        topic: 'test-write',
         messages: batch.messages
-      })
+      });
     }
   });
 
