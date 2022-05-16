@@ -18,7 +18,6 @@ async function main() {
   }
 
   const BATCH_MESSAGE_SIZE = 100000;
-  let consumerStream;
   const producer = new Kafka.Producer({
     'client.id': 'node-rdkafka-client',
     'metadata.broker.list': KAFKA_BROKERS,
@@ -31,11 +30,13 @@ async function main() {
     'acks': 0
   });
 
+  let consumer;
   let numProduced = 0;
   const onData = (data) => {
     if (CONSOLE_DEBUG === 'true') {
       console.log(data.value.toString());
     }
+    consumer.pause(['test']);
 
     try {
       producer.produce(// Topic to send the message to
@@ -51,7 +52,7 @@ async function main() {
       if (numProduced >= BATCH_MESSAGE_SIZE) {
         producer.poll();
         numProduced = 0;
-        consumerStream.consumer.commit();
+        consumer.consume();
       }
     } catch (ignored) {
     }
@@ -64,19 +65,26 @@ async function main() {
   // Wait for the ready event before proceeding
   producer.on('ready', function () {
 
-    consumerStream = Kafka.createReadStream({
+    consumer = new Kafka.KafkaConsumer({
       'group.id': 'node-rdkafka-read-group',
-      'metadata.broker.list': KAFKA_BROKERS,
-      'socket.keepalive.enable': true,
-      'enable.auto.commit': false
+      'metadata.broker.list': KAFKA_BROKERS
     }, {
       'auto.offset.reset': 'beginning'
-    }, {
-      topics: ['test'],
-      fetchSize: BATCH_MESSAGE_SIZE
     });
 
-    consumerStream.on('data', onData);
+    // Flowing mode
+    consumer.connect();
+
+    consumer
+      .on('ready', function () {
+        consumer.subscribe(['test']);
+
+        // Consume from the test topic. This is what determines
+        // the mode we are running in. By not specifying a callback (or specifying
+        // only a callback) we get messages as soon as they are available.
+        consumer.consume();
+      })
+      .on('data', onData);
   });
 }
 
