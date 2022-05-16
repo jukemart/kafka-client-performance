@@ -1,39 +1,20 @@
-const {Kafka} = require('kafkajs');
 const Dotenv = require('dotenv');
+const ReadClient = require("./read");
+const ReadWriteClient = require("./readwrite");
 
 Dotenv.config();
 
-async function main() {
+function main() {
 
   const {
-    CONSOLE_DEBUG,
-    KAFKA_BROKERS
+    CLIENT_TYPE,
   } = process.env;
 
-  const kafka = new Kafka({
-    clientId: 'client-kafkajs',
-    brokers: [KAFKA_BROKERS]
-  });
+  let client = CLIENT_TYPE === 'readwrite' ? ReadWriteClient : ReadClient;
 
-  const consumer = kafka.consumer({groupId: 'kafkajs-group'});
-
-  await consumer.connect();
-  await consumer.subscribe({
-    topic: 'test',
-    fromBeginning: true
-  });
-
-  await consumer.run({
-    eachMessage: async ({
-      message
-    }) => {
-      if (CONSOLE_DEBUG) {
-        console.log(message.value.toString());
-      }
-    }
-  });
+  client()
+    .then(() => console.log('started'));
 
 }
 
-main()
-  .then(() => console.log('started'));
+main();
