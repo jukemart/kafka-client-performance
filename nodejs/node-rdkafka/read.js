@@ -23,7 +23,7 @@ async function main() {
   };
 
   const consumer = new Kafka.KafkaConsumer({
-    'group.id': 'node-rdkafka-group',
+    'group.id': 'node-rdkafka-read-group',
     'metadata.broker.list': KAFKA_BROKERS
   }, {
     'auto.offset.reset': 'beginning'

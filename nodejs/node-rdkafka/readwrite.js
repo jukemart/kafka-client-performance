@@ -1,6 +1,8 @@
 const Kafka = require('node-rdkafka');
 const Dotenv = require('dotenv');
 
+process.env.UV_THREADPOOL_SIZE = '6';
+
 Dotenv.config();
 
 async function main() {
@@ -15,42 +17,57 @@ async function main() {
     process.exit(1);
   }
 
+  const BATCH_MESSAGE_SIZE = 100000;
   const producer = new Kafka.Producer({
     'client.id': 'node-rdkafka-client',
-    'metadata.broker.list': KAFKA_BROKERS
+    'metadata.broker.list': KAFKA_BROKERS,
+    'linger.ms': 100,
+    'socket.keepalive.enable': true,
+    'queue.buffering.max.messages': 1000000,
+    'queue.buffering.max.ms': 100,
+    'batch.num.messages': BATCH_MESSAGE_SIZE
+  }, {
+    'acks': 0
   });
 
   const consumer = new Kafka.KafkaConsumer({
-    'group.id': 'node-rdkafka-group',
+    'group.id': 'node-rdkafka-readwrite-group',
     'metadata.broker.list': KAFKA_BROKERS
   }, {
     'auto.offset.reset': 'beginning'
   });
 
+  let numProduced = 0;
   const onData = (data) => {
-    if (CONSOLE_DEBUG === "true") {
+    if (CONSOLE_DEBUG === 'true') {
       console.log(data.value.toString());
     }
 
     try {
-      producer.produce(
-        // Topic to send the message to
-        'test-write',
-        // optionally we can manually specify a partition for the message
+      producer.produce(// Topic to send the message to
+        'test-write', // optionally we can manually specify a partition for the message
         // this defaults to -1 - which will use librdkafka's default partitioner (consistent random for keyed messages, random for unkeyed messages)
+        null, // Message to send. Must be a buffer
+        data.value,
         null,
-        // Message to send. Must be a buffer
-        data.value
+        Date.now(),
+        null
       );
-    } catch (ignored) {}
+      numProduced++
+      if (numProduced >= BATCH_MESSAGE_SIZE) {
+        producer.poll();
+        numProduced = 0;
+      }
+    } catch (ignored) {
+    }
 
-  }
+  };
 
   // Connect to the broker manually
   producer.connect();
 
   // Wait for the ready event before proceeding
-  producer.on('ready', function() {
+  producer.on('ready', function () {
 
     // Flowing mode
     consumer.connect();
@@ -66,13 +83,6 @@ async function main() {
       })
       .on('data', onData);
   });
-
-  // We must either call .poll() manually after sending messages
-  // or set the producer to poll on an interval (.setPollInterval).
-  // Without this, we do not get delivery events and the queue
-  // will eventually fill up.
-  producer.setPollInterval(100);
-
 }
 
 module.exports = main;
