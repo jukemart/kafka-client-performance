@@ -30,13 +30,6 @@ async function main() {
     'acks': 0
   });
 
-  const consumer = new Kafka.KafkaConsumer({
-    'group.id': 'node-rdkafka-readwrite-group',
-    'metadata.broker.list': KAFKA_BROKERS
-  }, {
-    'auto.offset.reset': 'beginning'
-  });
-
   let numProduced = 0;
   const onData = (data) => {
     if (CONSOLE_DEBUG === 'true') {
@@ -69,19 +62,16 @@ async function main() {
   // Wait for the ready event before proceeding
   producer.on('ready', function () {
 
-    // Flowing mode
-    consumer.connect();
+    const stream = Kafka.createReadStream({
+      'group.id': 'node-rdkafka-read-group',
+      'metadata.broker.list': KAFKA_BROKERS
+    }, {
+      'auto.offset.reset': 'beginning'
+    }, {
+      topics: ['test']
+    });
 
-    consumer
-      .on('ready', function () {
-        consumer.subscribe(['test']);
-
-        // Consume from the test topic. This is what determines
-        // the mode we are running in. By not specifying a callback (or specifying
-        // only a callback) we get messages as soon as they are available.
-        consumer.consume();
-      })
-      .on('data', onData);
+    stream.on('data', onData);
   });
 }
 
