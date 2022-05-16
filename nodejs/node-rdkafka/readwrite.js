@@ -30,13 +30,8 @@ async function main() {
     'acks': 0
   });
 
-  let consumer;
-  let numConsumed = 0;
   let numProduced = 0;
   const onData = (data) => {
-    if (numConsumed++ >= NUM_BATCH_MESSAGES) {
-      consumer.pause(['test']);
-    }
     if (CONSOLE_DEBUG === 'true') {
       console.log(data.value.toString());
     }
@@ -55,8 +50,6 @@ async function main() {
       if (numProduced >= NUM_BATCH_MESSAGES) {
         producer.poll();
         numProduced = 0;
-        consumer.resume(['test']);
-        numConsumed = 0;
       }
     } catch (ignored) {
     }
@@ -69,10 +62,11 @@ async function main() {
   // Wait for the ready event before proceeding
   producer.on('ready', function () {
 
-    consumer = new Kafka.KafkaConsumer({
+    let consumer = new Kafka.KafkaConsumer({
       'group.id': 'node-rdkafka-read-group',
       'metadata.broker.list': KAFKA_BROKERS,
-      'queued.min.messages': NUM_BATCH_MESSAGES
+      'queued.min.messages': NUM_BATCH_MESSAGES,
+      'queued.max.messages.kbytes': 10000
     }, {
       'auto.offset.reset': 'beginning'
     });
